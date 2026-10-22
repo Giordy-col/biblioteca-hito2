@@ -1,0 +1,16 @@
+# Datos persistentes de los contenedores: son estado local de cada
+# estudiante, no material del curso — no se versionan.
+postgres/data/*
+!postgres/data/.gitkeep
+
+# (La configuración/sesión de pgAdmin vive en un volumen nombrado de Docker,
+# no en una carpeta de esta carpeta — ver docker-compose.yml.)
+
+# Proyecto Node.js de la práctica/proyecto en curso: cada estudiante coloca
+# aquí el suyo; no vive en el repositorio del curso.
+node/proyecto/*
+!node/proyecto/.gitkeep
+!node/proyecto/README.md
+
+# Variables de entorno locales (si el estudiante personalizó credenciales/puertos).
+.env

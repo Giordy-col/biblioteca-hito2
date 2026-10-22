@@ -1,0 +1,9 @@
+isbn,titulo,autor,categoria,anio_publicacion,ejemplares_disponibles
+9789580000011,Pedro Páramo,Juan Rulfo,Novela,1955,2
+9789580000012,El túnel,Ernesto Sabato,Novela,1948,1
+9789580000013,Ficciones,Jorge Luis Borges,Cuento,1944,3
+9789580000014,Estructuras de datos,Autor Local,Tecnología,2018,2
+9789580000015,Historia de Colombia,Autor Local,Historia,2010,1
+9789580000013,Ficciones (repetido),Jorge Luis Borges,Cuento,1944,1
+9789580000016,Manuscrito antiguo,Autor Local,Historia,1200,1
+9789580000017,Libro sin categoría,Autor Local,,2019,1

@@ -1,0 +1,105 @@
+# Entorno compartido del curso: PostgreSQL + pgAdmin + Node.js
+#
+# Pensado para docencia, no para producción: credenciales simples con valores
+# por defecto, todo corre en localhost, y las tres carpetas que monta cada
+# servicio (postgres/, pgadmin/, node/) son la única parte que un estudiante
+# necesita tocar semana a semana. Ver README.md de esta carpeta para el uso.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: curso_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-curso}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-curso}
+      POSTGRES_DB: ${POSTGRES_DB:-curso}
+      # initdb exige que su directorio de datos esté realmente vacío; un
+      # punto de montaje (bind mount) casi nunca lo está del todo (aunque sea
+      # solo un .gitkeep), y eso hace fallar la inicialización. La imagen
+      # oficial recomienda apuntar PGDATA a un subdirectorio del punto de
+      # montaje, que Postgres crea él mismo ya genuinamente vacío.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Datos de la base de datos: persisten entre "docker compose down/up".
+      - ./postgres/data:/var/lib/postgresql/data
+      # Scripts que se ejecutan UNA sola vez, en orden alfabético, la primera
+      # vez que se crea la base (carpeta de datos vacía). Ideal para el
+      # esquema + datos semilla de cada práctica.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      # Scripts sueltos para correr a mano cuantas veces se quiera con psql,
+      # sin que se disparen automáticamente.
+      - ./postgres/scripts:/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-curso} -d ${POSTGRES_DB:-curso}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: curso_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-estudiante@curso.edu.co}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-curso}
+      # Modo "desktop" simplificado: sin pantalla de login aparte ni master
+      # password extra para guardar la contraseña del servidor. Menos pasos
+      # para el estudiante; no usar esta configuración fuera del curso.
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      # Configuración y conexiones guardadas de pgAdmin: persisten entre
+      # reinicios. Volumen nombrado (no una carpeta del host): la imagen de
+      # pgAdmin corre como usuario no-root fijo y, a diferencia de la de
+      # Postgres, no ajusta permisos de una carpeta bind-mounteada del host,
+      # así que un bind mount aquí falla con "Permission denied". No hay
+      # nada en estos archivos que un estudiante necesite editar a mano.
+      - pgadmin_data:/var/lib/pgadmin
+      # Precarga la conexión al servidor "postgres" para que no haya que
+      # crearla a mano la primera vez (solo pide la contraseña una vez).
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  node:
+    image: node:20-alpine
+    container_name: curso_node
+    restart: unless-stopped
+    working_dir: /usr/src/app
+    environment:
+      PORT: ${NODE_PORT:-3000}
+      # Variables estándar de libpq: la librería `pg` las lee solas con
+      # `new Pool()` sin necesidad de pasarle credenciales en el código.
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-curso}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-curso}
+      PGDATABASE: ${POSTGRES_DB:-curso}
+      DATABASE_URL: postgres://${POSTGRES_USER:-curso}:${POSTGRES_PASSWORD:-curso}@postgres:5432/${POSTGRES_DB:-curso}
+    ports:
+      - "${NODE_PORT:-3000}:${NODE_PORT:-3000}"
+    volumes:
+      # El proyecto Node.js de la práctica/proyecto en curso. Se reemplaza el
+      # contenido de esta carpeta cada vez que se cambia de práctica.
+      - ./node/proyecto:/usr/src/app
+      # node_modules vive en un volumen aparte (no en el host) para no
+      # mezclar binarios nativos compilados en Linux con los del sistema
+      # operativo del estudiante, y para que "npm install" no sea lentísimo.
+      - node_modules:/usr/src/app/node_modules
+      - ./node/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+    entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    tty: true
+    stdin_open: true
+
+volumes:
+  node_modules:
+  pgadmin_data:
