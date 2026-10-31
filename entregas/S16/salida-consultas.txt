@@ -1,0 +1,121 @@
+SET
+   cliente   |          producto          | cantidad | subtotal 
+-------------+----------------------------+----------+----------
+ Laura Ortiz | Café de origen Cauca 500 g |        1 |    40000
+ Laura Ortiz | Prensa francesa            |        1 |    95000
+(2 rows)
+
+ id_cliente |     cliente      |  referido_por   
+------------+------------------+-----------------
+          1 | Laura Ortiz      | 
+          2 | Andrés Mejía     | Laura Ortiz
+          3 | Paula Restrepo   | Laura Ortiz
+          4 | Felipe Cárdenas  | 
+          5 | Daniela Rincón   | Felipe Cárdenas
+          6 | Jorge Salazar    | 
+          7 | Natalia Quintero | Paula Restrepo
+          8 | Óscar Vélez      | 
+(8 rows)
+
+ id_producto |      nombre      
+-------------+------------------
+         109 | Taza de cerámica
+(1 row)
+
+ id_cliente |      nombre      | num_pedidos 
+------------+------------------+-------------
+          2 | Andrés Mejía     |           3
+          4 | Felipe Cárdenas  |           3
+          1 | Laura Ortiz      |           3
+          3 | Paula Restrepo   |           2
+          5 | Daniela Rincón   |           1
+          7 | Natalia Quintero |           1
+          8 | Óscar Vélez      |           1
+          6 | Jorge Salazar    |           0
+(8 rows)
+
+ categoria | total  
+-----------+--------
+ Grano     | 480000
+ Accesorio | 376000
+ Molido    | 184000
+(3 rows)
+
+ mes | total  
+-----+--------
+   2 | 255000
+   4 | 393000
+(2 rows)
+
+           nombre            | categoria | precio 
+-----------------------------+-----------+--------
+ Molino manual               | Accesorio | 150000
+ Prensa francesa             | Accesorio |  95000
+ Café de origen Nariño 500 g | Grano     |  42000
+ Café molido premium 500 g   | Molido    |  30000
+(4 rows)
+
+ id_cliente |     nombre     
+------------+----------------
+          1 | Laura Ortiz
+          5 | Daniela Rincón
+(2 rows)
+
+      nombre      
+------------------
+ Andrés Mejía
+ Daniela Rincón
+ Jorge Salazar
+ Natalia Quintero
+ Óscar Vélez
+(5 rows)
+
+      nombre      
+------------------
+ Andrés Mejía
+ Daniela Rincón
+ Jorge Salazar
+ Natalia Quintero
+ Óscar Vélez
+(5 rows)
+
+ id_cliente |      nombre      | total  
+------------+------------------+--------
+          1 | Laura Ortiz      | 287000
+          7 | Natalia Quintero | 287000
+(2 rows)
+
+ id_cliente |     nombre      
+------------+-----------------
+          4 | Felipe Cárdenas
+          1 | Laura Ortiz
+(2 rows)
+
+ id_cliente |     nombre      
+------------+-----------------
+          4 | Felipe Cárdenas
+          1 | Laura Ortiz
+(2 rows)
+
+ id_cliente |   nombre    | lineas_grano 
+------------+-------------+--------------
+          1 | Laura Ortiz |            3
+(1 row)
+
+ r2_not_exists 
+---------------
+             8
+(1 row)
+
+ id_cliente | nombre 
+------------+--------
+(0 rows)
+
+     referido     | total_referido |    referidor    | total_referidor | comparacion 
+------------------+----------------+-----------------+-----------------+-------------
+ Andrés Mejía     |         104000 | Laura Ortiz     |          287000 | menos
+ Paula Restrepo   |          60000 | Laura Ortiz     |          287000 | menos
+ Daniela Rincón   |          60000 | Felipe Cárdenas |          158000 | menos
+ Natalia Quintero |         287000 | Paula Restrepo  |           60000 | más
+(4 rows)
+

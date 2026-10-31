@@ -1,0 +1,75 @@
+SET
+CREATE VIEW
+== Reporte 1. Los 20 libros más prestados
+ puesto |               titulo                |     isbn      | prestamos 
+--------+-------------------------------------+---------------+-----------
+      1 | Cien años de soledad                | 9780000000001 |         3
+      2 | 1984                                | 9780000000014 |         2
+      2 | Don Quijote de la Mancha            | 9780000000009 |         2
+      2 | El amor en los tiempos del cólera   | 9780000000002 |         2
+      5 | Alicia en el país de las maravillas | 9780000000019 |         1
+      5 | Breve historia del tiempo           | 9780000000020 |         1
+      5 | Como agua para chocolate            | 9780000000011 |         1
+      5 | Cosmos                              | 9780000000021 |         1
+      5 | Crónica de una muerte anunciada     | 9780000000003 |         1
+      5 | El Aleph                            | 9780000000008 |         1
+      5 | El principito                       | 9780000000017 |         1
+      5 | El túnel                            | 9780000000012 |         1
+      5 | Fahrenheit 451                      | 9780000000016 |         1
+      5 | Ficciones                           | 9780000000007 |         1
+      5 | La casa de los espíritus            | 9780000000006 |         1
+      5 | La sombra del viento                | 9780000000010 |         1
+      5 | Los detectives salvajes             | 9780000000013 |         1
+      5 | Matilda                             | 9780000000018 |         1
+      5 | Pedro Páramo                        | 9780000000005 |         1
+      5 | Rayuela                             | 9780000000004 |         1
+      5 | Un mundo feliz                      | 9780000000015 |         1
+(21 rows)
+
+CREATE VIEW
+== Reporte 2. El o los lectores que más libros han leído
+ documento  |          nombre          | libros_leidos 
+------------+--------------------------+---------------
+ 1000000001 | Mariana Gómez Rojas      |             4
+ 1000000002 | Santiago Rodríguez Pérez |             4
+(2 rows)
+
+CREATE VIEW
+== Reporte 3. Lectores morosos
+ documento  |           nombre           |                 correo                 |  telefono  | prestamos_en_mora 
+------------+----------------------------+----------------------------------------+------------+-------------------
+ 1000000008 | Andrés Felipe Vargas Ortiz | andres.vargas@correo-ejemplo.edu.co    | 3001000008 |                 1
+ 1000000007 | Isabella Ramírez Castro    | isabella.ramirez@correo-ejemplo.edu.co | 3001000007 |                 2
+(2 rows)
+
+CREATE VIEW
+== Reporte 4. Préstamos en mora
+ id_prestamo |           lector           |                 correo                 |  telefono  |               titulo                | codigo_inventario | fecha_prestamo | fecha_esperada | dias_mora 
+-------------+----------------------------+----------------------------------------+------------+-------------------------------------+-------------------+----------------+----------------+-----------
+          43 | Isabella Ramírez Castro    | isabella.ramirez@correo-ejemplo.edu.co | 3001000007 | El principito                       | 9780000000017-001 | 2026-09-21     | 2026-10-05     |        26
+          45 | Isabella Ramírez Castro    | isabella.ramirez@correo-ejemplo.edu.co | 3001000007 | Matilda                             | 9780000000018-001 | 2026-10-01     | 2026-10-15     |        16
+          46 | Andrés Felipe Vargas Ortiz | andres.vargas@correo-ejemplo.edu.co    | 3001000008 | Alicia en el país de las maravillas | 9780000000019-001 | 2026-10-11     | 2026-10-25     |         6
+(3 rows)
+
+== Caso 1. Libros sin ningún préstamo (no deben estar en el reporte 1)
+                     titulo                      
+-------------------------------------------------
+ Crimen y castigo
+ Drácula
+ El nombre del viento
+ El origen de las especies
+ Frankenstein
+ Harry Potter y la piedra filosofal
+ Los miserables
+ Orgullo y prejuicio
+ Sapiens: de animales a dioses
+ Trilce
+ Veinte poemas de amor y una canción desesperada
+(11 rows)
+
+== Caso 6. Préstamo abierto que vence hoy (no está en mora con la regla <)
+           nombre           |     titulo     | fecha_esperada 
+----------------------------+----------------+----------------
+ Sebastián González Morales | Fahrenheit 451 | 2026-10-31
+(1 row)
+
