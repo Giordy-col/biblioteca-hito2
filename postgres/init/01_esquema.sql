@@ -5,6 +5,9 @@
 --   * llave foránea devoluciones -> prestamos en el sentido correcto
 --   * autores.nombre UNIQUE (para no duplicar autores al cargar)
 --   * CHECKs de estado/rol/año, y tablas de paso + bitácora para la carga S14
+--   * (S20, Hito 3) vista ejemplares_descuadre: verifica la única
+--     desnormalización deliberada del esquema, ejemplares.estado = 'prestado'
+--     (ver entregas/S20/documento-normalizacion.md, sección 5)
 
 \set ON_ERROR_STOP on
 
@@ -78,6 +81,31 @@ CREATE TABLE devoluciones (
   fecha_devolucion  date    NOT NULL,
   prestamo_id       integer NOT NULL UNIQUE REFERENCES prestamos (id_prestamo)
 );
+
+-- ---------------------------------------------------------------
+-- Verificación de la desnormalización (S20, Hito 3)
+-- ejemplares.estado = 'prestado' es un dato derivado: un ejemplar está
+-- prestado si y solo si tiene un préstamo sin fila en devoluciones.
+-- Hasta el Hito 4 (trigger) lo mantiene quien registra el préstamo o la
+-- devolución. Esta vista devuelve los ejemplares donde la copia no coincide
+-- con el cálculo; 0 filas = todo bien.
+-- ---------------------------------------------------------------
+
+CREATE VIEW ejemplares_descuadre AS
+SELECT e.id_ejemplar,
+       e.codigo_inventario,
+       e.estado                                   AS estado_guardado,
+       CASE WHEN a.abierto THEN 'prestado'
+            ELSE 'no prestado' END                AS segun_prestamos
+FROM   ejemplares e
+CROSS JOIN LATERAL (
+       SELECT EXISTS (SELECT 1
+                      FROM   prestamos p
+                      WHERE  p.ejemplar_id = e.id_ejemplar
+                        AND  NOT EXISTS (SELECT 1 FROM devoluciones d
+                                         WHERE d.prestamo_id = p.id_prestamo)) AS abierto
+) a
+WHERE  (e.estado = 'prestado') <> a.abierto;
 
 -- ---------------------------------------------------------------
 -- Carga desde CSV (S14): bitácora y tablas de paso
