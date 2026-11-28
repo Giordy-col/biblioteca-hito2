@@ -33,6 +33,17 @@ SET search_path TO biblioteca, public;
 
 BEGIN;
 
+-- Hito 4: los triggers de programacion.sql validan cada préstamo nuevo
+-- (mora, ejemplar disponible) y cambian ejemplares.estado. Este script
+-- carga un HISTORIAL: inserta todos los préstamos viejos antes que sus
+-- devoluciones, así que a la mitad de la carga parecería que hay mora.
+-- Por eso se desactivan mientras se carga y se vuelven a activar al final
+-- (el estado de los ejemplares lo calcula el paso 3 de este mismo script).
+-- DISABLE TRIGGER USER no toca las FK. Si las tablas no tienen triggers
+-- (base sin programacion.sql), no hace nada.
+ALTER TABLE prestamos    DISABLE TRIGGER USER;
+ALTER TABLE devoluciones DISABLE TRIGGER USER;
+
 -- 0. Comprobar que están cargados los datos semilla que usamos
 DO $$
 BEGIN
@@ -138,6 +149,9 @@ BEGIN
     RAISE EXCEPTION 'Se esperaban 26 préstamos y 17 devoluciones';
   END IF;
 END $$;
+
+ALTER TABLE prestamos    ENABLE TRIGGER USER;
+ALTER TABLE devoluciones ENABLE TRIGGER USER;
 
 COMMIT;
 

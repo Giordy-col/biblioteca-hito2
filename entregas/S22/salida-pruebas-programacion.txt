@@ -1,0 +1,137 @@
+SET
+== 0. Verificación inicial: ejemplares_descuadre (esperado: 0 filas)
+ id_ejemplar | codigo_inventario | estado_guardado | segun_prestamos 
+-------------+-------------------+-----------------+-----------------
+(0 rows)
+
+== R1a. Lector que no existe (esperado: ERROR "no existe")
+psql:pruebas-programacion.sql:36: ERROR:  El lector con documento 1000000099 no existe
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 16 at RAISE
+== R1b. Un bibliotecario como lector (esperado: ERROR "no es un lector")
+psql:pruebas-programacion.sql:39: ERROR:  El usuario 9000000001 no es un lector (rol: bibliotecario)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 19 at RAISE
+== R1c. Lector inactivo (esperado: ERROR "no está activo")
+BEGIN
+UPDATE 1
+psql:pruebas-programacion.sql:44: ERROR:  El lector 1000000020 no está activo (estado: inactivo)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 23 at RAISE
+ROLLBACK
+== R2a. Isabella, con 2 préstamos en mora (esperado: ERROR "está en mora")
+psql:pruebas-programacion.sql:51: ERROR:  El lector 1000000007 está en mora; no puede tomar préstamos
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 29 at RAISE
+== R2b. Sebastián, su préstamo vence HOY: no es mora (esperado: préstamo registrado)
+BEGIN
+psql:pruebas-programacion.sql:55: NOTICE:  Préstamo 53 registrado: lector 1000000006, ejemplar 9780000000032-001, hasta 2026-12-12
+CALL
+ROLLBACK
+== R3a. Valentina, con 5 abiertos (esperado: ERROR "ya tiene 5 préstamos abiertos")
+psql:pruebas-programacion.sql:62: ERROR:  El lector 1000000003 ya tiene 5 préstamos abiertos (máx. 3)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 36 at RAISE
+== R3b. Óscar llega a 3 abiertos y el 4º se rechaza (esperado: 3 registrados y ERROR)
+BEGIN
+psql:pruebas-programacion.sql:66: NOTICE:  Préstamo 54 registrado: lector 1000000020, ejemplar 9780000000032-001, hasta 2026-12-12
+CALL
+psql:pruebas-programacion.sql:67: NOTICE:  Préstamo 55 registrado: lector 1000000020, ejemplar 9780000000031-001, hasta 2026-12-12
+CALL
+psql:pruebas-programacion.sql:68: NOTICE:  Préstamo 56 registrado: lector 1000000020, ejemplar 9780000000030-001, hasta 2026-12-12
+CALL
+psql:pruebas-programacion.sql:69: ERROR:  El lector 1000000020 ya tiene 3 préstamos abiertos (máx. 3)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 36 at RAISE
+ROLLBACK
+== R4a. Ejemplar que no existe (esperado: ERROR "no existe")
+psql:pruebas-programacion.sql:76: ERROR:  El ejemplar 9780000000032-999 no existe
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 57 at RAISE
+== R4b. Ejemplar prestado a Isabella (esperado: ERROR "no está disponible")
+psql:pruebas-programacion.sql:79: ERROR:  El ejemplar 9780000000017-001 no está disponible (estado: prestado, con préstamo abierto: sí)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 66 at RAISE
+== R4c. Ejemplar perdido (esperado: ERROR "está en estado perdido")
+BEGIN
+UPDATE 1
+psql:pruebas-programacion.sql:84: ERROR:  El ejemplar 9780000000032-002 está en estado perdido; no se puede prestar
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 60 at RAISE
+ROLLBACK
+== Plazo inválido (esperado: ERROR "El plazo debe ser positivo")
+psql:pruebas-programacion.sql:88: ERROR:  El plazo debe ser positivo (recibido: 0)
+CONTEXT:  PL/pgSQL function registrar_prestamo(character varying,character varying,character varying,integer) line 10 at RAISE
+== 5. Préstamo y devolución de Óscar (esperado: disponible -> prestado -> disponible, descuadre 0)
+BEGIN
+-- 5a. Antes del préstamo: el ejemplar está disponible
+ codigo_inventario |   estado   
+-------------------+------------
+ 9780000000032-001 | disponible
+(1 row)
+
+psql:pruebas-programacion.sql:101: NOTICE:  Préstamo 57 registrado: lector 1000000020, ejemplar 9780000000032-001, hasta 2026-12-12
+CALL
+-- 5b. Después del préstamo: el trigger lo pasó a prestado
+ codigo_inventario |  estado  
+-------------------+----------
+ 9780000000032-001 | prestado
+(1 row)
+
+-- 5c. Descuadre (esperado: 0 filas)
+ id_ejemplar | codigo_inventario | estado_guardado | segun_prestamos 
+-------------+-------------------+-----------------+-----------------
+(0 rows)
+
+psql:pruebas-programacion.sql:109: NOTICE:  Devolución registrada para el préstamo 57
+CALL
+-- 5d. Después de la devolución: el trigger lo volvió a poner disponible
+ codigo_inventario |   estado   
+-------------------+------------
+ 9780000000032-001 | disponible
+(1 row)
+
+-- 5e. Descuadre (esperado: 0 filas)
+ id_ejemplar | codigo_inventario | estado_guardado | segun_prestamos 
+-------------+-------------------+-----------------+-----------------
+(0 rows)
+
+-- 5f. Auditoría: un registro del préstamo y uno de la devolución
+ id_prestamo |   accion   
+-------------+------------
+          57 | prestamo
+          57 | devolucion
+(2 rows)
+
+-- 5g. Devolver otra vez el mismo préstamo (esperado: ERROR "ya fue devuelto")
+psql:pruebas-programacion.sql:119: ERROR:  El préstamo 57 ya fue devuelto
+CONTEXT:  PL/pgSQL function registrar_devolucion(integer,date) line 10 at RAISE
+ROLLBACK
+== 6a. Préstamo que no existe (esperado: ERROR "no existe")
+psql:pruebas-programacion.sql:126: ERROR:  El préstamo 99999 no existe
+CONTEXT:  PL/pgSQL function registrar_devolucion(integer,date) line 7 at RAISE
+== 6b. Fecha de devolución anterior al préstamo (esperado: ERROR "es anterior")
+psql:pruebas-programacion.sql:133: ERROR:  La fecha de devolución (2026-08-20) es anterior a la del préstamo (2026-10-19)
+CONTEXT:  PL/pgSQL function registrar_devolucion(integer,date) line 13 at RAISE
+== 7a. INSERT directo para Isabella, en mora (esperado: ERROR del trigger "está en mora")
+psql:pruebas-programacion.sql:144: ERROR:  El lector 7 está en mora; no puede registrar el préstamo
+CONTEXT:  PL/pgSQL function validar_prestamo() line 12 at RAISE
+== 7b. INSERT directo de un ejemplar ya prestado (esperado: ERROR del trigger "no está disponible")
+psql:pruebas-programacion.sql:151: ERROR:  El ejemplar 51 no está disponible para préstamo
+CONTEXT:  PL/pgSQL function validar_prestamo() line 17 at RAISE
+== 7c. INSERT directo con la bibliotecaria como lectora (esperado: ERROR del trigger "no es un lector activo")
+psql:pruebas-programacion.sql:158: ERROR:  El usuario 21 no es un lector activo; no puede registrar el préstamo
+CONTEXT:  PL/pgSQL function validar_prestamo() line 7 at RAISE
+== 7d. INSERT directo válido (esperado: pasa, y el trigger AFTER marca el ejemplar como prestado)
+BEGIN
+INSERT 0 1
+ codigo_inventario |  estado  
+-------------------+----------
+ 9780000000032-001 | prestado
+(1 row)
+
+ id_ejemplar | codigo_inventario | estado_guardado | segun_prestamos 
+-------------+-------------------+-----------------+-----------------
+(0 rows)
+
+ROLLBACK
+== 7e. UPDATE de un préstamo abierto: renovar el de Sebastián 7 días (esperado: pasa)
+BEGIN
+UPDATE 1
+ROLLBACK
+== 8. Verificación final: ejemplares_descuadre (esperado: 0 filas)
+ id_ejemplar | codigo_inventario | estado_guardado | segun_prestamos 
+-------------+-------------------+-----------------+-----------------
+(0 rows)
+
